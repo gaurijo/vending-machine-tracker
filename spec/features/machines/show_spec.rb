@@ -1,18 +1,28 @@
 require 'rails_helper'
 
-RSpec.describe Machine, type: :model do
-  describe 'validations' do
-    it { should validate_presence_of :location }
-    it { should belong_to :owner }
-  end
+RSpec.describe 'Machine show page' do 
+   it "has the name of all the snacks associated with that machine, along with their price" do 
+      owner = Owner.create!(name: "PepsiCo")
+      machine_1 = Machine.create!(location: "Cupertino", owner_id: owner.id)
+      machine_2 = Machine.create!(location: "Hayward", owner_id: owner.id)
 
-  describe 'relationships' do 
-    it { should have_many :machine_snacks }
-    it { should have_many(:snacks).through(:machine_snacks) }
-  end
+      chips = Snack.create!(name: "Chips", cost: 2.00)
+      trail = Snack.create!(name: "Trailmix", cost: 4.00)
+      gum = Snack.create!(name: "Gum", cost: 1.00)
 
-  describe 'model methods' do 
-    it 'has the average price of snacks in a machine' do 
+      MachineSnack.create!(machine_id: machine_1.id, snack_id: chips.id)
+      MachineSnack.create!(machine_id: machine_1.id, snack_id: trail.id)
+
+      visit "/machines/#{machine_1.id}"
+
+      expect(page).to have_content("Chips")
+      expect(page).to have_content("Trailmix")
+      expect(page).to have_content("2")
+      expect(page).to have_content("4")
+      expect(page).to_not have_content("Gum")
+   end
+
+   it "has the average price for all snacks in that machine" do 
       owner = Owner.create!(name: "PepsiCo")
       machine_1 = Machine.create!(location: "Cupertino", owner_id: owner.id)
 
@@ -24,22 +34,12 @@ RSpec.describe Machine, type: :model do
       MachineSnack.create!(machine_id: machine_1.id, snack_id: trail.id)
       MachineSnack.create!(machine_id: machine_1.id, snack_id: gum.id)
 
-      expect(machine_1.average_price.to_d.to_f.round(2)).to eq(2.33)
-    end
+      visit "/machines/#{machine_1.id}"
 
-    it 'has the count of snacks in a machine' do 
-      owner = Owner.create!(name: "PepsiCo")
-      machine_1 = Machine.create!(location: "Cupertino", owner_id: owner.id)
-
-      chips = Snack.create!(name: "Chips", cost: 2.00)
-      trail = Snack.create!(name: "Trailmix", cost: 4.00)
-      gum = Snack.create!(name: "Gum", cost: 1.00)
-
-      MachineSnack.create!(machine_id: machine_1.id, snack_id: chips.id)
-      MachineSnack.create!(machine_id: machine_1.id, snack_id: trail.id)
-      MachineSnack.create!(machine_id: machine_1.id, snack_id: gum.id)
-
-      expect(machine_1.count).to eq(3)
-    end
-  end
+      expect(page).to have_content("2.33")
+   end
 end
+
+# As a visitor
+# When I visit a vending machine show page
+# I also see an average price for all of the snacks in that machine
